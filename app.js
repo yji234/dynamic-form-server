@@ -1,4 +1,6 @@
 const DynamicformsModel = require('./module/dynamicforms.js');
+const DragDropSchemaModel = require('./module/dragdrop.js');
+const FormListSchemaModel = require('./module/formlist');
 const Koa = require('koa');
 const app = new Koa();
 const Router = require('koa-router');
@@ -94,6 +96,81 @@ router.get('/getDynamicforms', async (ctx, next) => {
   };
   await next();
 });
+
+/**
+ * 拖拽元素
+*/
+
+// 增加
+router.post('/addDragSource', async (ctx, next) => {
+  const dragSource = new DragDropSchemaModel(ctx.request.body)
+  console.log('dragSource', dragSource)
+  await dragSource.save().then(() => {
+    console.log('增加成功')
+  })
+  ctx.body = {
+      status: 200,
+      message: '增加成功',
+  };
+  await next();
+});
+
+// 查询
+router.get('/getDragSource', async (ctx, next) => {
+  const result = await DragDropSchemaModel.find({}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  });
+  ctx.body = {
+    status: 200,
+    message: '查询成功',
+    data: result,
+  };
+  await next();
+});
+
+/**
+ * 生成的表单数据
+*/
+// 增加
+router.post('/addFormList', async(ctx, next) => {
+  console.log(ctx.request.body)
+  const parentId = ctx.request.body.parentId;
+  const forms = JSON.parse(ctx.request.body.forms);
+  forms.forEach(async(item) => {
+    const formListItem = new FormListSchemaModel(item)
+    formListItem.parentId = parentId;
+    console.log('formListItem', formListItem)
+    await formListItem.save().then(() => {
+      console.log('增加成功')
+    })
+  })
+  ctx.body = {
+    status: 200,
+    message: '增加成功',
+  };
+  await next();
+});
+
+// 查询
+router.get('/getFormList/:parentId', async (ctx, next) => {
+  const { parentId } = ctx.params;
+  const result = await FormListSchemaModel.find({parentId}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  })
+  console.log(result);
+  ctx.body = {
+    status: 200,
+    message: '查询成功',
+    data: result,
+  };
+  await next();
+})
 
 app.use(cors());
 app.use(bodyParser());
