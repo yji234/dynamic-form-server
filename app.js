@@ -1,6 +1,7 @@
 const DynamicformsModel = require('./module/dynamicforms.js');
 const DragDropSchemaModel = require('./module/dragdrop.js');
 const FormListSchemaModel = require('./module/formlist');
+const UserSchemaModel = require('./module/user');
 const Koa = require('koa');
 const app = new Koa();
 const Router = require('koa-router');
@@ -40,6 +41,9 @@ router.post('/addForm', async (ctx, next) => {
   ctx.body = {
       status: 200,
       message: '增加成功',
+      data: {
+        parentId: forms._id,
+      },
   };
   await next();
 });
@@ -97,10 +101,10 @@ router.get('/getDynamicforms', async (ctx, next) => {
   await next();
 });
 
+
 /**
  * 拖拽元素
 */
-
 // 增加
 router.post('/addDragSource', async (ctx, next) => {
   const dragSource = new DragDropSchemaModel(ctx.request.body)
@@ -132,7 +136,7 @@ router.get('/getDragSource', async (ctx, next) => {
 });
 
 /**
- * 生成的表单数据
+ * Form
 */
 // 增加
 router.post('/addFormList', async(ctx, next) => {
@@ -168,6 +172,73 @@ router.get('/getFormList/:parentId', async (ctx, next) => {
     status: 200,
     message: '查询成功',
     data: result,
+  };
+  await next();
+})
+
+
+/**
+ * Menu
+*/
+// 增加
+router.post('/addMenu', async(ctx, next) => {
+  const menu = new UserSchemaModel(ctx.request.body);
+  await menu.save().then(() => {
+    console.log('增加成功')
+  })
+  ctx.body = {
+    status: 200,
+    message: '增加成功',
+  };
+  await next();
+});
+// 修改
+router.post('/updateMenu', async (ctx, next) => {
+  const { _id } = ctx.request.body
+  console.log(_id);
+  const menu = new UserSchemaModel(ctx.request.body)
+  menu.update_time = Date.now();
+  console.log('menu', menu);
+  await UserSchemaModel.updateOne({_id}, menu, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+    console.log('修改成功')
+  })
+  ctx.body = {
+    status: 200,
+    message: '修改成功',
+  };
+  await next();
+});
+// 查询
+router.get('/getMenu', async (ctx, next) => {
+  const result = await UserSchemaModel.find({}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  })
+  ctx.body = {
+    status: 200,
+    message: '查询成功',
+    data: result,
+  };
+  await next();
+})
+// 删除
+router.delete('/deleteMenu/:_id', async (ctx, next) => {
+  const { _id } = ctx.params;
+  await UserSchemaModel.findOneAndRemove({_id}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  })
+  ctx.body = {
+    status: 200,
+    message: '删除成功',
   };
   await next();
 })
