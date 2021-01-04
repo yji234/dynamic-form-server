@@ -1,6 +1,6 @@
-const DynamicformsModel = require('./module/dynamicforms.js');
+const FormbaseModel = require('./module/formbase.js');
 const DragDropSchemaModel = require('./module/dragdrop.js');
-const FormListSchemaModel = require('./module/formlist');
+const FormattrSchemaModel = require('./module/formattr');
 const UserSchemaModel = require('./module/user');
 const Koa = require('koa');
 const app = new Koa();
@@ -16,26 +16,19 @@ const bodyParser = require('koa-bodyparser');
 */
 router.post('/addForm', async (ctx, next) => {
   const { _id } = ctx.request.body
-  console.log(_id);
-  const forms = new DynamicformsModel(ctx.request.body)
-  console.log('forms', forms)
+  const forms = new FormbaseModel(ctx.request.body)
   if(_id) {
-    console.log('我修改数据了');
     forms.update_time = Date.now();
-    console.log(forms)
-    await DynamicformsModel.updateOne({_id}, forms, (error) => {
+    await FormbaseModel.updateOne({_id}, forms, (error) => {
       if(error) {
         console.log(error);
         return;
       }
-      console.log('修改成功')
     })
   } else {
-    console.log('我新增数据了');
     forms.create_time = Date.now();
-    console.log(forms);
     await forms.save().then(() => {
-      console.log('增加成功')
+      console.log('Form Base-增加成功')
     })
   }
   ctx.body = {
@@ -51,7 +44,7 @@ router.post('/addForm', async (ctx, next) => {
 // 删除
 router.delete('/deleteForm/:id', async (ctx, next) => {
   const { id } = ctx.params;
-  await DynamicformsModel.findOneAndRemove({_id: id}, (error) => {
+  await FormbaseModel.findOneAndRemove({_id: id}, (error) => {
     if(error) {
       console.log(error);
       return;
@@ -67,7 +60,7 @@ router.delete('/deleteForm/:id', async (ctx, next) => {
 // 修改状态
 router.get('/modifyStatus/:id/:status', async (ctx, next) => {
   const { id, status } = ctx.params;
-  await DynamicformsModel.updateOne({_id: id}, {status}, (error) => {
+  await FormbaseModel.updateOne({_id: id}, {status}, (error) => {
     if(error) {
       console.log(error);
       return;
@@ -82,7 +75,7 @@ router.get('/modifyStatus/:id/:status', async (ctx, next) => {
 
 // 查询
 router.get('/getDynamicforms', async (ctx, next) => {
-  const result = await DynamicformsModel.find({}, (error) => {
+  const result = await FormbaseModel.find({}, (error) => {
     if(error) {
       console.log(error);
       return;
@@ -108,7 +101,6 @@ router.get('/getDynamicforms', async (ctx, next) => {
 // 增加
 router.post('/addDragSource', async (ctx, next) => {
   const dragSource = new DragDropSchemaModel(ctx.request.body)
-  console.log('dragSource', dragSource)
   await dragSource.save().then(() => {
     console.log('增加成功')
   })
@@ -136,20 +128,57 @@ router.get('/getDragSource', async (ctx, next) => {
 });
 
 /**
- * Form
+ * Form Attr
 */
 // 增加
 router.post('/addFormList', async(ctx, next) => {
-  console.log(ctx.request.body)
   const parentId = ctx.request.body.parentId;
   const forms = JSON.parse(ctx.request.body.forms);
   forms.forEach(async(item) => {
-    const formListItem = new FormListSchemaModel(item)
+    const formListItem = new FormattrSchemaModel(item)
     formListItem.parentId = parentId;
-    console.log('formListItem', formListItem)
     await formListItem.save().then(() => {
-      console.log('增加成功')
+      console.log('Form Attr-增加成功')
     })
+  })
+  ctx.body = {
+    status: 200,
+    message: '增加成功',
+  };
+  await next();
+});
+
+// 修改
+router.post('/modifyFormList', async(ctx, next) => {
+  const parentId = ctx.request.body.parentId;
+  const forms = JSON.parse(ctx.request.body.forms);
+  forms.forEach(async(item) => {
+    const formListItem = new FormattrSchemaModel(item)
+    console.log('formListItem', formListItem)
+    // 查询下当前数据是否已经在数据库中存在
+    const result = await FormattrSchemaModel.find({_id: formListItem._id}, (error) => {
+      if(error) {
+        console.log(error);
+        return;
+      }
+    })
+    console.log('result', result);
+    // 若存在，则修改
+    if(result.length > 0) {
+      await FormattrSchemaModel.updateOne({_id: formListItem._id}, formListItem, (error) => {
+        if(error) {
+          console.log(error);
+          return;
+        }
+        console.log('Form Attr-修改成功')
+      })
+    } else {
+      // 若不存在，则添加
+      formListItem.parentId = parentId;
+      await formListItem.save().then(() => {
+        console.log('Form Attr-增加成功')
+      })
+    }
   })
   ctx.body = {
     status: 200,
@@ -161,17 +190,34 @@ router.post('/addFormList', async(ctx, next) => {
 // 查询
 router.get('/getFormList/:parentId', async (ctx, next) => {
   const { parentId } = ctx.params;
-  const result = await FormListSchemaModel.find({parentId}, (error) => {
+  const result = await FormattrSchemaModel.find({parentId}, (error) => {
     if(error) {
       console.log(error);
       return;
     }
   })
-  console.log(result);
   ctx.body = {
     status: 200,
     message: '查询成功',
     data: result,
+  };
+  await next();
+})
+
+// 删除某个表单item
+router.delete('/deleteFormList/:_id', async (ctx, next) => {
+  const { _id } = ctx.params;
+  console.log('id', _id);
+  await FormattrSchemaModel.findOneAndRemove({_id}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+    console.log('Form Attr删除成功');
+  })
+  ctx.body = {
+    status: 200,
+    message: '删除成功',
   };
   await next();
 })
@@ -195,10 +241,8 @@ router.post('/addMenu', async(ctx, next) => {
 // 修改
 router.post('/updateMenu', async (ctx, next) => {
   const { _id } = ctx.request.body
-  console.log(_id);
   const menu = new UserSchemaModel(ctx.request.body)
   menu.update_time = Date.now();
-  console.log('menu', menu);
   await UserSchemaModel.updateOne({_id}, menu, (error) => {
     if(error) {
       console.log(error);
