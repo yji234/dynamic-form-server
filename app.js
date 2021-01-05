@@ -1,7 +1,9 @@
+const mongoose = require('./module/db.js');
 const FormbaseModel = require('./module/formbase.js');
 const DragDropSchemaModel = require('./module/dragdrop.js');
-const FormattrSchemaModel = require('./module/formattr');
-const UserSchemaModel = require('./module/user');
+const FormattrSchemaModel = require('./module/formattr.js');
+const UserSchemaModel = require('./module/user.js');
+const FormValueSchema = require('./module/forms.js');
 const Koa = require('koa');
 const app = new Koa();
 const Router = require('koa-router');
@@ -96,7 +98,7 @@ router.get('/getDynamicforms', async (ctx, next) => {
 
 
 /**
- * 拖拽元素
+ * Drag Drop
 */
 // 增加
 router.post('/addDragSource', async (ctx, next) => {
@@ -126,6 +128,7 @@ router.get('/getDragSource', async (ctx, next) => {
   };
   await next();
 });
+
 
 /**
  * Form Attr
@@ -275,6 +278,124 @@ router.get('/getMenu', async (ctx, next) => {
 router.delete('/deleteMenu/:_id', async (ctx, next) => {
   const { _id } = ctx.params;
   await UserSchemaModel.findOneAndRemove({_id}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  })
+  ctx.body = {
+    status: 200,
+    message: '删除成功',
+  };
+  await next();
+})
+
+
+// 新建成表单的值存储
+const FormValueSchemaModel = mongoose.model('Formvalue', FormValueSchema, 'formvalue');
+router.post('/addFormValue', async(ctx, next) => {
+  // 遍历对象
+  const keys = Object.keys(ctx.request.body);
+  const values = Object.values(ctx.request.body)
+  keys.forEach((item, index) => {
+    if(typeof(values[index]) === 'number') {
+      FormValueSchema.add({
+        [item]: Number,
+      })
+    }
+    if(typeof(values[index]) === 'string') {
+      FormValueSchema.add({
+        [item]: String,
+      })
+    }
+  })
+  console.log('add___FormValueSchema', FormValueSchema);
+  const value = new FormValueSchemaModel(ctx.request.body);
+  await value.save().then(() => {
+    console.log('FormValue-增加成功')
+  })
+  ctx.body = {
+    status: 200,
+    message: '增加成功',
+  };
+  await next();
+});
+
+// 查询列表
+router.get('/getFormValue/:formId', async (ctx, next) => {
+  const { formId } = ctx.params;
+  const result = await FormValueSchemaModel.find({formId}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  })
+  ctx.body = {
+    status: 200,
+    message: '查询成功',
+    data: result,
+  };
+  await next();
+})
+
+// 查询某个
+router.get('/getFormValueItem/:_id', async (ctx, next) => {
+  const { _id } = ctx.params;
+  const result = await FormValueSchemaModel.find({_id}, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+  })
+  ctx.body = {
+    status: 200,
+    message: '查询成功',
+    data: result,
+  };
+  await next();
+})
+
+// 修改
+router.post('/modifyFormValue', async(ctx, next) => {
+  // 遍历对象
+  const keys = Object.keys(ctx.request.body);
+  const values = Object.values(ctx.request.body)
+  keys.forEach((item, index) => {
+    if(typeof(values[index]) === 'number') {
+      FormValueSchema.add({
+        [item]: Number,
+      })
+    }
+    if(typeof(values[index]) === 'string') {
+      FormValueSchema.add({
+        [item]: String,
+      })
+    }
+  })
+  console.log('modify___FormValueSchema', FormValueSchema);
+  const { _id } = ctx.request.body
+  console.log('_id', _id);
+  const value = new FormValueSchemaModel(ctx.request.body)
+  value.update_time = Date.now();
+  console.log('value', value);
+  await FormValueSchemaModel.updateOne({_id: _id}, value, (error) => {
+    if(error) {
+      console.log(error);
+      return;
+    }
+    console.log('修改formValue成功')
+  })
+  ctx.body = {
+    status: 200,
+    message: '修改成功',
+  };
+  await next();
+});
+
+// 删除
+router.delete('/deleteFormValue/:_id', async (ctx, next) => {
+  const { _id } = ctx.params;
+  await FormValueSchemaModel.findOneAndRemove({_id}, (error) => {
     if(error) {
       console.log(error);
       return;
