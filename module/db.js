@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const config = {
   useNewUrlParser: true,
   useUnifiedTopology: true ,
+  useFindAndModify: false,
 }
 
 // 建立连接

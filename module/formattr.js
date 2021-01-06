@@ -7,6 +7,7 @@ const FormAttrSchema = mongoose.Schema({
   type: String,
   name: String,
   label: String,
+  options: Array,
   placeHolder: String,
   isRequired: Number,
   message: String,

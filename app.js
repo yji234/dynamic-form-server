@@ -378,7 +378,7 @@ router.post('/modifyFormValue', async(ctx, next) => {
   const value = new FormValueSchemaModel(ctx.request.body)
   value.update_time = Date.now();
   console.log('value', value);
-  await FormValueSchemaModel.updateOne({_id: _id}, value, (error) => {
+  await FormValueSchemaModel.updateOne({_id}, value, (error) => {
     if(error) {
       console.log(error);
       return;
